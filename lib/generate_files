@@ -1,0 +1,55 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "fileutils"
+
+# rubocop:disable Metrics/BlockLength
+
+(1..12).each do |day|
+  FileUtils.mkdir_p("lib/day_#{day}")
+  FileUtils.mkdir_p("spec/lib/day_#{day}")
+
+  File.open("lib/day_#{day}/solver.rb", "w") do |file|
+    file.puts("# frozen_string_literal: true")
+    file << "class Solver;end"
+  end
+
+  File.new("lib/day_#{day}/input.txt", "w")
+  File.open("lib/day_#{day}/run.rb", "w") do |file|
+    file << <<~CONTENT
+      #!/usr/bin/env ruby
+      # frozen_string_literal: true
+
+      require "./lib/day_#{day}/solver"
+      require "pry"
+
+      part_1 = Solver.new("./lib/day_#{day}/input.txt").solve_part_1
+      puts "solution part 1: \#{part_1}"
+
+      part_2 = Solver.new("./lib/day_#{day}/input.txt").solve_part_2
+      puts "solution part 2: \#{part_2}"
+    CONTENT
+  end
+
+  File.open("spec/lib/day_#{day}/solver_spec.rb", "w") do |file|
+    file << <<~CONTENT
+      # frozen_string_literal: true
+      require "day_#{day}/solver"
+      require "pry"
+
+      RSpec.describe Solver do
+        before do
+          File.open("test-file.txt", "w") do |file|
+            file << <<~FILE_CONTENT
+            FILE_CONTENT
+          end
+        end
+
+        after do
+          File.delete("test-file.txt")
+        end
+      end
+    CONTENT
+  end
+end
+# rubocop:enable Metrics/BlockLength

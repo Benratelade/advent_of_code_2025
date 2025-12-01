@@ -1,0 +1,6 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+puzzle_path = ARGV[0]
+
+system("ruby lib/#{puzzle_path}/run.rb")

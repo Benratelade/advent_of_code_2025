@@ -1,0 +1,57 @@
+AllCops:
+    NewCops: enable
+    Exclude:
+    - db/**/*
+    - config/**/*
+    - script/**/*
+    - node_modules/**/*
+    - vendor/**/*
+    - tmp/**/*
+    
+Style/StringLiterals: 
+  EnforcedStyle: double_quotes
+
+Metrics/BlockLength:
+  Exclude: 
+    - spec/**/*.rb
+
+Lint/EmptyClass:
+  Enabled: false
+
+Naming/VariableNumber:
+  EnforcedStyle: snake_case
+
+Style/TrailingCommaInHashLiteral:
+  EnforcedStyleForMultiline: consistent_comma
+
+Style/HashSyntax: 
+  EnforcedShorthandSyntax: never
+
+Style/TrailingCommaInArrayLiteral:
+  EnforcedStyleForMultiline: consistent_comma
+
+Style/TrailingCommaInArguments:
+  EnforcedStyleForMultiline: consistent_comma
+
+Style/Documentation:
+  Enabled: false
+
+Metrics/MethodLength:
+  Enabled: false
+
+Layout/LineLength:
+  Exclude: 
+    - spec/**/*.rb
+
+# Below are arbitrary limits, mostly here to put up with Rails defaults
+# Layout/LineLength:
+#   Max: 150
+
+Metrics/PerceivedComplexity:
+  Max: 16
+
+Metrics/CyclomaticComplexity:
+  Max: 16 
+
+Metrics/AbcSize:
+  Max: 45
