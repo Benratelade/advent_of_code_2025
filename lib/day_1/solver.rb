@@ -21,11 +21,26 @@ class Solver
     @final_zero_counts = 0
     @zero_counts_in_passing = 0
     @input = process_input
+    build_dial
   end
 
   def process_input
     File.readlines(@file).map do |line|
       Solver.extract_instructions(line.strip)
+    end
+  end
+
+  def build_dial
+    @dial = {}
+    (DIAL_MINIMUM..DIAL_MAXIMUM).each do |position|
+      @dial[position] = Node.new(position: position)
+    end
+    @dial[DIAL_MINIMUM].left_node = @dial[DIAL_MAXIMUM]
+    @dial[DIAL_MAXIMUM].right_node = @dial[DIAL_MINIMUM]
+
+    @dial.each do |position, node|
+      node.left_node = @dial[position - 1] unless node.left_node
+      node.right_node = @dial[position + 1] unless node.right_node
     end
   end
 
@@ -39,10 +54,10 @@ class Solver
 
   def solve_part_2
     @input.each do |instructions|
-      rotate(**instructions)
+      rotate_dial(**instructions)
     end
 
-    @zero_counts_in_passing + @final_zero_counts
+    @zero_counts_in_passing
   end
 
   def rotate(direction:, amount:)
@@ -69,5 +84,30 @@ class Solver
     end
 
     @final_zero_counts += 1 if @dial_position.zero?
+  end
+
+  def rotate_dial(direction:, amount:)
+    full_circles = amount / @total_length
+    @zero_counts_in_passing += full_circles
+    remainder = amount % @total_length
+
+    remainder.times do
+      @dial_position = @dial[@dial_position].next(direction: direction).position
+      @zero_counts_in_passing += 1 if @dial_position.zero?
+    end
+  end
+
+  class Node
+    attr_accessor :right_node, :left_node, :position
+
+    def initialize(position:)
+      @position = position
+    end
+
+    def next(direction:)
+      return @left_node if direction == :left
+
+      @right_node if direction == :right
+    end
   end
 end
