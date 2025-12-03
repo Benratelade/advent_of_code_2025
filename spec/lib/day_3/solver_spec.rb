@@ -86,5 +86,19 @@ RSpec.describe Solver do
         ),
       ).to eq(888_911_112_111)
     end
+
+    context "some real examples" do
+      it "does what we expect for the first line from the problem" do
+        solver = Solver.new("test-file.txt")
+
+        expect(
+          solver.extract_joltage_from_battery_bank_for_part_2(
+            "2241213221432712242323222122544232352344223223231433322416731152222121222425315232122422623633244223".chars,
+          ),
+        ).to eq(
+          776_633_244_223,
+        )
+      end
+    end
   end
 end
