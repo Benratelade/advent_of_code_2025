@@ -51,11 +51,11 @@ RSpec.describe Solver do
 
       expect(solver.operations[0].operand).to eq("*")
       expect(solver.operations[0].cephalopod_inputs).to eq([356, 24, 1])
-      expect(solver.operations[0].cephalopod_result).to eq(1058)
+      expect(solver.operations[0].cephalopod_result).to eq(8544)
 
       expect(solver.operations[1].operand).to eq("+")
       expect(solver.operations[1].cephalopod_inputs).to eq([8, 248, 369])
-      expect(solver.operations[1].cephalopod_result).to eq(3_253_600)
+      expect(solver.operations[1].cephalopod_result).to eq(625)
 
       expect(solver.operations[3].raw_inputs).to eq([["6", "4", " "], ["2", "3", " "], ["3", "1", "4"]])
     end

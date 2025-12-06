@@ -18,6 +18,7 @@ class Solver
   end
 
   class Operation
+    require "matrix"
     attr_reader :operand, :raw_inputs, :inputs, :cephalopod_inputs
 
     def initialize(operand:, raw_inputs:)
@@ -38,10 +39,14 @@ class Solver
     private
 
     def process_inputs
-      @inputs = @raw_inputs.map {|characters| characters.join.to_i}
+      @inputs = @raw_inputs.map { |characters| characters.join.to_i }
     end
 
-    def process_cephalopod_inputs; end
+    def process_cephalopod_inputs
+      matrix = Matrix.rows(@raw_inputs)
+
+      @cephalopod_inputs = (0..(matrix.column_count - 1)).to_a.reverse.map {|index| matrix.column(index).to_a.join.to_i}
+    end
   end
 
   private
@@ -60,8 +65,6 @@ class Solver
     lines.each do |line|
       next if line.match?(/\*/)
 
-      puts "processing line: #{line}"
-
       line_input = []
       input = []
       line.each_char.with_index do |char, index|
@@ -78,7 +81,6 @@ class Solver
         end
 
         input << char
-
       end
       line_input.each_with_index { |raw_input, index| operations[index][:raw_inputs] << raw_input }
     end
