@@ -45,7 +45,9 @@ class Solver
     def process_cephalopod_inputs
       matrix = Matrix.rows(@raw_inputs)
 
-      @cephalopod_inputs = (0..(matrix.column_count - 1)).to_a.reverse.map {|index| matrix.column(index).to_a.join.to_i}
+      @cephalopod_inputs = (0..(matrix.column_count - 1)).to_a.reverse.map do |index|
+        matrix.column(index).to_a.join.to_i
+      end
     end
   end
 
