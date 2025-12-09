@@ -61,7 +61,7 @@ RSpec.describe Solver do
     it "returns the expected result for part 2" do
       solver = Solver.new("test-file.txt")
 
-      expect(solver.solve_part_2).to eq(nil)
+      expect(solver.solve_part_2).to eq(40)
     end
   end
 end
