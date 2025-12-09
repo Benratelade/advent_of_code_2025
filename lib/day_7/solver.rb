@@ -15,8 +15,8 @@ class Solver
   end
 
   def solve_part_1
-    (@map.height - 1).times do |row_index|
-      advance_beam(row_index)
+    (@map.height - 1).times do
+      advance_beam
     end
 
     @part_1_split_count
