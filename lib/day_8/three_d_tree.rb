@@ -5,6 +5,18 @@ class ThreeDTree
 
   AXES = %i[x_coord y_coord z_coord].freeze
 
+  def self.calculate_distance_between(first_point:, second_point:)
+    x_delta = first_point.x_coord - second_point.x_coord
+    y_delta = first_point.y_coord - second_point.y_coord
+    z_delta = first_point.z_coord - second_point.z_coord
+
+    Math.sqrt(
+      (x_delta**2) +
+        (y_delta**2) +
+        (z_delta**2),
+    )
+  end
+
   def initialize(points)
     @points_hash = {}
     build_tree(root_node: nil, points: points, axis_index: 0)
@@ -37,6 +49,10 @@ class ThreeDTree
 
   def [](point)
     @points_hash[point]
+  end
+
+  def find_nearest_neighbour_for(point:)
+    
   end
 
   class Node
