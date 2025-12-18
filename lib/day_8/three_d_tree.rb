@@ -56,11 +56,20 @@ class ThreeDTree
   end
 
   class Node
-    attr_accessor :value, :children
+    attr_accessor :value, :children, :axis
 
-    def initialize(value:)
+    def initialize(value:, axis:)
       @value = value
+      @axis = axis
       @children = []
+    end
+
+    def left_child
+      @children[0]
+    end
+
+    def right_child
+      @children[1]
     end
   end
 end

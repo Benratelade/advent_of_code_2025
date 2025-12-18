@@ -43,13 +43,14 @@ RSpec.describe ThreeDTree do
       )
 
       expect(tree.root.value).to eq(point_f)
-      expect(tree.root.children.map(&:value)).to eq(
-        [
-          point_b,
-          point_d,
-        ],
-      )
-      expect(tree[point_d].children.map(&:value)).to eq([point_c])
+      expect(tree.root.axis).to eq(:x_coord)
+      expect(tree.root.left_child.value).to eq(point_b)
+      expect(tree.root.left_child.axis).to eq(:y_coord)
+      expect(tree.root.right_child.value).to eq(point_d)
+      expect(tree.root.right_child.axis).to eq(:y_coord)
+
+      expect(tree[point_d].left_child.value).to eq(point_c)
+      expect(tree[point_d].left_child.axis).to eq(:z_coord)
     end
   end
 
