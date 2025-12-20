@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class ThreeDTree
-  attr_accessor :root
+  attr_accessor :root, :points_hash
 
   AXES = %i[x_coord y_coord z_coord].freeze
 
@@ -52,7 +52,7 @@ class ThreeDTree
     @points_hash[point]
   end
 
-  def find_nearest_neighbour_for(point:, root_node:, nearest_node_candidate: {})
+  def find_nearest_neighbour_for(point:, root_node:, nearest_node_candidate: { point: point })
     return if root_node.nil?
 
     distance = ThreeDTree.unsquare_rooted_distance_between(first_point: point, second_point: root_node.value)
