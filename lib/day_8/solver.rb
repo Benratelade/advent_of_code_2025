@@ -6,56 +6,33 @@ require_relative "three_d_tree"
 class Solver
   attr_reader :junction_boxes, :three_d_tree
 
-  def initialize(file)
+  def initialize(file, connections_count: 10)
     @file = file
     @circuits = {}
+    @connections_count = connections_count
 
     process_file
+    @distances = {}
+    @junction_boxes.combination(2).each do |pair|
+      @distances[pair] = ThreeDTree.unsquare_rooted_distance_between(first_point: pair[0], second_point: pair[1])
+    end
+    @distances = @distances.sort_by { |_key, value| value }
   end
 
   def solve_part_1
-    @distances = []
-    unique_pairs = {}
-    @three_d_tree.points_hash.each_key do |junction_box|
-      distance_hash = @three_d_tree.find_nearest_neighbour_for(point: junction_box, root_node: @three_d_tree.root)
-      distance_hash_signature = [distance_hash[:point].to_s, distance_hash[:node].value.to_s].sort
-      next if unique_pairs[distance_hash_signature]
-      
-      unique_pairs[distance_hash_signature] = true
-      @distances << distance_hash
-    end
+    @connections_count.times do |index|
+      junction_box_pair = @distances[index][0]
+      first_junction_box = junction_box_pair[0]
 
-    @distances.sort_by! do |distance|
-      distance[:distance]
-    end
- 
-    @distances.each do |distance|
-     puts "#{distance[:point]} - #{distance[:node].value}: #{distance[:distance]}"
-    end
-    # processed_pairs = {}
-    10.times do |index|
-      first_junction_box = @distances[index][:point]
-
-      second_junction_box = @distances[index][:node].value
+      second_junction_box = junction_box_pair[1]
       first_circuit = first_junction_box.circuit
       second_circuit = second_junction_box.circuit
-      # pair = { first_junction_box => true, second_junction_box => true }
-
-      # next if processed_pairs[pair]
-
-      if first_circuit == second_circuit
-        # processed_pairs[pair] = true
-        next
-      end
 
       new_circuit = Circuit.new
       new_circuit.junction_boxes = first_circuit.junction_boxes + second_circuit.junction_boxes
       new_circuit.junction_boxes += [first_junction_box, second_junction_box]
       new_circuit.junction_boxes = new_circuit.junction_boxes.uniq
       new_circuit.junction_boxes.each { |junction_box| junction_box.circuit = new_circuit }
-      # processed_pairs[pair] = true
-      circuits_count = @junction_boxes.map(&:circuit).uniq.count
-      puts "There are currently #{circuits_count} circuits"
     end
 
     circuits_sorted_by_size = @junction_boxes.map(&:circuit).uniq.sort_by do |circuit|
@@ -65,7 +42,34 @@ class Solver
     circuits_sorted_by_size[0..2].inject(1) { |accumulator, circuit| accumulator * circuit.junction_boxes.count }
   end
 
-  def solve_part_2; end
+  def solve_part_2
+    final_connection = nil
+    count = 0
+    circuits_count = @junction_boxes.map(&:circuit).uniq.count
+    while circuits_count > 1
+      junction_box_pair = @distances[count][0]
+      first_junction_box = junction_box_pair[0]
+
+      second_junction_box = junction_box_pair[1]
+      first_circuit = first_junction_box.circuit
+      second_circuit = second_junction_box.circuit
+
+      new_circuit = Circuit.new
+      new_circuit.junction_boxes = first_circuit.junction_boxes + second_circuit.junction_boxes
+      new_circuit.junction_boxes += [first_junction_box, second_junction_box]
+      new_circuit.junction_boxes = new_circuit.junction_boxes.uniq
+      new_circuit.junction_boxes.each { |junction_box| junction_box.circuit = new_circuit }
+
+      count += 1
+      circuits_count = @junction_boxes.map(&:circuit).uniq.count
+      if circuits_count == 1
+        final_connection = [first_junction_box, second_junction_box]
+        break
+      end
+    end
+
+    final_connection[0].x_coord * final_connection[1].x_coord
+  end
 
   private
 
@@ -74,7 +78,5 @@ class Solver
       x_coord, y_coord, z_coord = line.split(",").map(&:to_i)
       JunctionBox.new(x_coord: x_coord, y_coord: y_coord, z_coord: z_coord)
     end
-
-    @three_d_tree = ThreeDTree.new(@junction_boxes)
   end
 end

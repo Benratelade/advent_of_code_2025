@@ -29,6 +29,8 @@ RSpec.describe Solver do
         425,690,689
       FILE_CONTENT
     end
+
+    allow(ThreeDTree).to receive(:unsquare_rooted_distance_between)
   end
 
   after do
@@ -60,13 +62,14 @@ RSpec.describe Solver do
         { x_coord: 984, y_coord: 92, z_coord: 344 },
         { x_coord: 425, y_coord: 690, z_coord: 689 },
       ].each do |coords|
-        expect(JunctionBox).to receive(:new).with(**coords).and_return(double("a junction box"))
+        expect(JunctionBox).to(
+          receive(:new).with(**coords).and_return(double("a junction box")),
+        )
       end
 
       solver = Solver.new("test-file.txt")
 
       expect(solver.junction_boxes.count).to eq(20)
-      expect(ThreeDTree).to have_received(:new).with(solver.junction_boxes)
     end
   end
 
@@ -82,7 +85,7 @@ RSpec.describe Solver do
     it "returns the expected result for part 2" do
       solver = Solver.new("test-file.txt")
 
-      expect(solver.solve_part_2).to eq(nil)
+      expect(solver.solve_part_2).to eq(25_272)
     end
   end
 end
