@@ -58,8 +58,8 @@ RSpec.describe ThreeDTree do
     it "finds the nearest neigbour for a point" do
       tree = ThreeDTree.new(@points)
 
-      expect(tree.find_nearest_neighbour_for(@point_a)).to eq(@point_d)
-      expect(tree.find_nearest_neighbour_for(@point_e)).to eq(@point_f)
+      expect(tree.find_nearest_neighbour_for(point: @point_a, root_node: tree.root)[:node].value).to eq(@point_d)
+      expect(tree.find_nearest_neighbour_for(point: @point_e, root_node: tree.root)[:node].value).to eq(@point_f)
     end
   end
 
