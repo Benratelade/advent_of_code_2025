@@ -29,8 +29,6 @@ RSpec.describe Solver do
         425,690,689
       FILE_CONTENT
     end
-
-    allow(ThreeDTree).to receive(:new)
   end
 
   after do
@@ -39,6 +37,7 @@ RSpec.describe Solver do
 
   describe "intialize" do
     it "assigns a bunch of junction boxes and builds a 3D tree" do
+      allow(ThreeDTree).to receive(:new)
       [
         { x_coord: 162, y_coord: 817, z_coord: 812 },
         { x_coord: 57, y_coord: 618, z_coord: 57 },
