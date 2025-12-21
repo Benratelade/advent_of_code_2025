@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Circuit
   attr_accessor :junction_boxes
 
