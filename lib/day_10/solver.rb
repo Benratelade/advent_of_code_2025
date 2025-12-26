@@ -20,9 +20,9 @@ class Solver
       joltage_requirements = line.match(/(\{[\d,]+})/)[1]
 
       Machine.new(
-        indicator_lights: indicator_lights,
-        buttons: buttons,
-        joltage_requirements: joltage_requirements,
+        indicator_lights_string: indicator_lights,
+        buttons_string: buttons,
+        joltage_requirements_string: joltage_requirements,
       )
     end
   end

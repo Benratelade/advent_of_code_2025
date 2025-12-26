@@ -37,25 +37,25 @@ RSpec.describe Solver do
   describe "initialize" do
     it "instantiates a machine with buttons for each line" do
       expect(Machine).to receive(:new).with(
-        indicator_lights: "[.##.]",
-        buttons: [
+        indicator_lights_string: "[.##.]",
+        buttons_string: [
           "(3)", "(1,3)", "(2)", "(2,3)", "(0,2)", "(0,1)",
         ],
-        joltage_requirements: "{3,5,4,7}",
+        joltage_requirements_string: "{3,5,4,7}",
       )
       expect(Machine).to receive(:new).with(
-        indicator_lights: "[...#.]",
-        buttons: [
+        indicator_lights_string: "[...#.]",
+        buttons_string: [
           "(0,2,3,4)", "(2,3)", "(0,4)", "(0,1,2)", "(1,2,3,4)",
         ],
-        joltage_requirements: "{7,5,12,7,2}",
+        joltage_requirements_string: "{7,5,12,7,2}",
       )
       expect(Machine).to receive(:new).with(
-        indicator_lights: "[.###.#]",
-        buttons: [
+        indicator_lights_string: "[.###.#]",
+        buttons_string: [
           "(0,1,2,3,4)", "(0,3,4)", "(0,1,2,4,5)", "(1,2)",
         ],
-        joltage_requirements: "{10,11,11,5,10,5}",
+        joltage_requirements_string: "{10,11,11,5,10,5}",
       )
 
       Solver.new("test-file.txt")
