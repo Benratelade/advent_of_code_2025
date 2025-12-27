@@ -27,19 +27,24 @@ describe Machine do
         joltage_requirements_string: "{3,5,4,7}",
       )
 
-      expect(machine.indicator_display).to eq("....")
+      buttons = machine.buttons
+      expect(
+        machine.press_button(
+          buttons[0], [".", ".", ".", "."],
+        ),
+      ).to eq([".", ".", ".", "#"])
 
-      machine.press_button(0)
-      expect(machine.indicator_display).to eq("...#")
+      expect(
+        machine.press_button(buttons[0], [".", ".", ".", "#"]),
+      ).to eq([".", ".", ".", "."])
 
-      machine.press_button(0)
-      expect(machine.indicator_display).to eq("....")
+      expect(
+        machine.press_button(buttons[1], [".", ".", ".", "."]),
+      ).to eq([".", "#", ".", "#"])
 
-      machine.press_button(1)
-      expect(machine.indicator_display).to eq(".#.#")
-
-      machine.press_button(2)
-      expect(machine.indicator_display).to eq(".###")
+      expect(
+        machine.press_button(buttons[2], [".", "#", ".", "#"]),
+      ).to eq([".", "#", "#", "#"])
     end
   end
 end

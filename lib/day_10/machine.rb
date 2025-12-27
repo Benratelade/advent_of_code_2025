@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 class Machine
-  attr_reader :buttons, :indicator_lights, :target_indicator_lights
+  attr_reader :buttons, :starting_indicator_lights, :target_indicator_lights
+  attr_accessor :minimum_button_presses, :indicator_lights
 
   def initialize(
     indicator_lights_string:,
@@ -13,28 +14,32 @@ class Machine
     @joltage_requirements = joltage_requirements_string
   end
 
-  def indicator_display
-    @indicator_lights.join
+  def indicator_display(indicator_lights)
+    indicator_lights.join
   end
 
-  def press_button(button_index)
-    button = @buttons[button_index]
-
+  def press_button(button, indicators_state)
+    new_state = indicators_state.dup
     button.light_indexes.each do |index|
-      light = @indicator_lights[index]
-      @indicator_lights[index] = if light == "."
-                                   "#"
-                                 else
-                                   "."
-                                 end
+      light = indicators_state[index]
+      new_state[index] = if light == "."
+                           "#"
+                         else
+                           "."
+                         end
     end
+    new_state
+  end
+
+  def stable_state_reached?
+    @indicator_lights == @target_indicator_lights
   end
 
   private
 
   def build_indicator_lights(indicator_lights_string)
     @target_indicator_lights = indicator_lights_string.gsub(/[\[\]]/, "").chars
-    @indicator_lights = ("." * @target_indicator_lights.count).chars
+    @starting_indicator_lights = ("." * @target_indicator_lights.count).chars
   end
 
   def build_buttons(buttons_strings)
