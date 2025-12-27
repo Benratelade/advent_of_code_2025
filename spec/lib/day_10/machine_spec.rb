@@ -13,8 +13,6 @@ describe Machine do
 
       expect(machine.buttons.count).to eq(6)
       expect(machine.buttons[0].light_indexes).to eq([3])
-      expect(machine.indicator_lights.length).to eq(4)
-      expect(machine.indicator_display).to eq("....")
       expect(machine.target_indicator_lights).to eq([".", "#", "#", "."])
     end
   end

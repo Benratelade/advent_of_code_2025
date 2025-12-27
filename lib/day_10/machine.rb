@@ -2,7 +2,6 @@
 
 class Machine
   attr_reader :buttons, :starting_indicator_lights, :target_indicator_lights
-  attr_accessor :minimum_button_presses, :indicator_lights
 
   def initialize(
     indicator_lights_string:,
@@ -12,10 +11,6 @@ class Machine
     build_indicator_lights(indicator_lights_string)
     build_buttons(buttons_string)
     @joltage_requirements = joltage_requirements_string
-  end
-
-  def indicator_display(indicator_lights)
-    indicator_lights.join
   end
 
   def press_button(button, indicators_state)
@@ -29,10 +24,6 @@ class Machine
                          end
     end
     new_state
-  end
-
-  def stable_state_reached?
-    @indicator_lights == @target_indicator_lights
   end
 
   private
