@@ -17,7 +17,22 @@ class Solver
     minimum_count.sum
   end
 
-  def solve_part_2; end
+  def solve_part_2
+    minimum_counts = []
+    threads = []
+    @machines.each_slice(@machines.count / 3) do |slice|
+      threads << Thread.new do
+        slice.each_with_index do |machine, index|
+          puts "processing joltage for machine number #{index}"
+          minimum_counts << press_all_joltage_buttons_for_machine(machine)
+          puts "processed #{minimum_counts.count} machines, minimum count: #{minimum_counts}"
+        end
+      end
+    end
+
+    threads.each(&:join)
+    minimum_counts.sum
+  end
 
   private
 
@@ -56,6 +71,37 @@ class Solver
       break if new_results.any? { |new_result| new_result == machine.target_indicator_lights }
 
       results = new_results
+    end
+
+    count
+  end
+
+  def press_all_joltage_buttons_for_machine(machine)
+    count = 0
+    results = [machine.starting_joltage]
+    cached_results = { machine.starting_joltage => 0 }
+    loop do
+      count += 1
+      new_results = []
+
+      results.each do |result|
+        machine.buttons.each do |button|
+          temp_result = machine.press_joltage_button(button, result)
+          result_overshot_target = false
+          temp_result.each_with_index do |light, index|
+            result_overshot_target = light > machine.target_joltage[index]
+          end
+
+          next if result_overshot_target || cached_results[temp_result]
+
+          cached_results[temp_result] ||= count
+          new_results << temp_result
+        end
+      end
+
+      break if new_results.any? { |new_result| new_result == machine.target_joltage }
+
+      results = new_results.uniq
     end
 
     count
