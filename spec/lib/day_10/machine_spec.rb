@@ -20,7 +20,6 @@ describe Machine do
     end
 
     it "calculates a reduced_joltage and multiplier for the machine" do
-      pending "Reduced joltage may not be that useful after all"
       machine = Machine.new(
         indicator_lights_string: "[..##..]",
         buttons_string: ["(0,5)", "(1,2,3,4,5)", "(1,3,4,5)", "(3,4)", "(2,3,5)", "(0,1,2,5)"],
@@ -30,10 +29,32 @@ describe Machine do
       expect(machine.starting_joltage).to eq(Vector[0, 0, 0, 0, 0, 0])
       expect(machine.target_joltage).to eq(Vector[29, 40, 23, 42, 39, 52])
       expect(machine.reduced_joltages).to eq(
-        {
-          Vector[6, 1, 8, 1] => 10,
-          Vector[0, 0, 0, 4] => 1,
-        },
+        [
+          {
+            Vector[2, 4, 2, 4, 3, 5] => 10,
+            Vector[8, 0, 3, 2, 9, 1] => 1,
+          },
+          {
+            Vector[2, 3, 2, 4, 3, 5] => 10,
+            Vector[9, 9, 2, 1, 8, 1] => 1,
+          },
+          {
+            Vector[2, 3, 2, 4, 3, 5] => 10,
+            Vector[9, 9, 3, 1, 8, 1] => 1,
+          },
+          {
+            Vector[2, 4, 2, 4, 3, 5] => 10,
+            Vector[9, 0, 3, 1, 8, 2] => 1,
+          },
+          {
+            Vector[2, 4, 2, 4, 3, 5] => 10,
+            Vector[9, 0, 2, 1, 9, 1] => 1,
+          },
+          {
+            Vector[2, 3, 2, 4, 3, 5] => 10,
+            Vector[8, 9, 2, 2, 9, 1] => 1,
+          },
+        ],
       )
     end
   end
@@ -93,6 +114,35 @@ describe Machine do
       expect(
         machine.press_joltage_button(buttons[2], Vector[0, 1, 0, 3]),
       ).to eq(Vector[0, 1, 1, 3])
+    end
+  end
+
+  describe "reverse_press_joltage_button" do
+    it "DEcrements the joltage for button's associated indicator lights" do
+      machine = Machine.new(
+        indicator_lights_string: "[.##.]",
+        buttons_string: ["(3)", "(1,3)", "(2)", "(2,3)", "(0,2)", "(0,1)"],
+        joltage_requirements_string: "{3,5,4,7}",
+      )
+
+      buttons = machine.buttons
+      expect(
+        machine.reverse_press_joltage_button(buttons[2], Vector[0, 1, 1, 3]),
+      ).to eq(Vector[0, 1, 0, 3])
+
+      expect(
+        machine.reverse_press_joltage_button(buttons[1], Vector[0, 1, 0, 3]),
+      ).to eq(Vector[0, 0, 0, 2])
+
+      expect(
+        machine.reverse_press_joltage_button(buttons[0], Vector[0, 0, 0, 2]),
+      ).to eq(Vector[0, 0, 0, 1])
+
+      expect(
+        machine.reverse_press_joltage_button(
+          buttons[0], Vector[0, 0, 0, 1],
+        ),
+      ).to eq(Vector[0, 0, 0, 0])
     end
   end
 end

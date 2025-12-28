@@ -17,6 +17,7 @@ class Machine
     joltage_requirements_string:
   )
     build_indicator_lights(indicator_lights_string)
+    @length = @starting_indicator_lights.length
     build_buttons(buttons_string)
     build_joltage(joltage_requirements_string)
   end
@@ -38,12 +39,15 @@ class Machine
     joltage + button.joltage_vector
   end
 
+  def reverse_press_joltage_button(button, joltage)
+    joltage - button.joltage_vector
+  end
+
   private
 
   def build_indicator_lights(indicator_lights_string)
     @target_indicator_lights = indicator_lights_string.gsub(/[\[\]]/, "").chars
     @starting_indicator_lights = ("." * @target_indicator_lights.count).chars
-    @length = @starting_indicator_lights.length
   end
 
   def build_buttons(buttons_strings)
@@ -55,6 +59,23 @@ class Machine
       Regexp.last_match[1].to_i
     end)
     @starting_joltage = Vector.zero(@target_joltage.count)
+
+    @reduced_joltages = @buttons.map do |button|
+      joltage_before_last = @target_joltage - button.joltage_vector
+      if joltage_before_last.all? { |jolt| jolt >= 10 }
+        tens_joltage = joltage_before_last / 10
+        units_joltage = joltage_before_last.collect { |element| element % 10 }
+        {
+          tens_joltage => 10,
+          units_joltage => 1,
+        }
+      else
+        {
+          Vector.zero(joltage_before_last.size) => 10,
+          joltage_before_last => 1,
+        }
+      end
+    end
   end
 
   class Button
