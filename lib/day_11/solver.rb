@@ -10,11 +10,28 @@ class Solver
   end
 
   def solve_part_1
-    minimum_count = @machines.map do |machine|
-      press_all_buttons_for_machine(machine)
+    paths = []
+
+    start = "you"
+    incomplete_paths = { start => "you" }
+    loop do
+      break if incomplete_paths.empty?
+
+      new_incomplete_paths = {}
+      incomplete_paths.each do |incomplete_path, next_output|
+        devices[next_output].each do |next_3_chars|
+          new_path = incomplete_path + next_3_chars
+          if next_3_chars == "out"
+            paths << new_path
+          else
+            new_incomplete_paths[new_path] = next_3_chars
+          end
+        end
+      end
+      incomplete_paths = new_incomplete_paths
     end
 
-    minimum_count.sum
+    paths.uniq.count
   end
 
   def solve_part_2; end
