@@ -17,19 +17,18 @@ class Solver
 
   def solve_part_2
     minimum_counts = []
-    threads = []
     slice_size = @machines.count / 3
     @machines.each_slice(slice_size).to_a.each_with_index do |slice, slice_index|
-      threads << Thread.new do
-        slice.each_with_index do |machine, index|
-          puts "processing joltage for machine number #{index + (slice_index * slice_size)}"
-          minimum_counts << process_joltages_for_machine(machine)
-          puts "processed #{minimum_counts.count} machines, minimum count: #{minimum_counts}"
-        end
+      # threads << Thread.new do
+      slice.each_with_index do |machine, index|
+        puts "processing joltage for machine number #{index + (slice_index * slice_size)}"
+        minimum_counts << process_joltages_for_machine(machine)
+        puts "processed #{minimum_counts.count} machines, minimum count: #{minimum_counts}"
       end
+      # end
     end
 
-    threads.each(&:join)
+    # threads.each(&:join)
     minimum_counts.sum
   end
 
@@ -139,50 +138,80 @@ class Solver
   end
 
   def process_joltages_for_machine(machine)
-    puts "Machine slice: #{machine.reduced_joltages}"
-    all_candidates = []
-    machine.reduced_joltages.each do |tuple|
-      count = 0
-      temporary_results = []
-      cached_results = {}
-      tuple.each do |target_joltage, factor|
-        puts "Processing reduced_joltage: #{target_joltage} for final joltage: #{machine.target_joltage}"
-        next if target_joltage.zero?
+    puts "Machine target: #{machine.target_joltage}"
+    all_targets = {
+      machine.target_joltage => {
+        "count" => 0,
+        "current_buttons_to_exclude" => [],
+      },
+    }
+    cached_results = { machine.target_joltage => 0 }
 
-        results = [target_joltage]
-        cached_results[target_joltage] = 0
-        loop do
-          # binding.irb if count > 10
-          count += 1
-          new_results = []
+    loop do
+      break if all_targets.keys.any?(&:zero?)
 
-          results.each do |result|
-            machine.buttons.each do |button|
-              temp_result = machine.reverse_press_joltage_button(button, result)
-              result_overshot_start = false
-              temp_result.each do |jolt|
-                result_overshot_start = jolt.negative? if jolt.negative?
-              end
+      temp_targets = {}
+      all_targets.each do |target, data|
+        count_candidate = data["count"]
+        current_buttons_to_exclude = data["current_buttons_to_exclude"]
+        minimum_joltage = target.min(target.size).find { |element| !element.zero? }
+        puts "Processing minimum: #{minimum_joltage} for target: #{target}"
 
-              next if result_overshot_start || cached_results[temp_result]
-
-              cached_results[temp_result] ||= count
-              new_results << temp_result
-            end
-          end
-
-          break if new_results.empty?
-          break if new_results.any?(&:zero?)
-
-          results = new_results.uniq
+        joltage_index = target.to_a.index(minimum_joltage)
+        buttons = machine.buttons.select do |button|
+          button.joltage_vector[joltage_index] == 1 && !current_buttons_to_exclude.include?(button)
         end
 
-        temporary_results << (count * factor)
-      end
+        new_joltages = all_joltages_after_reaching_zero_for_position(
+          position: joltage_index,
+          starting_joltages_vector: target,
+          buttons: buttons,
+          machine: machine,
+          current_count: count_candidate,
+          current_buttons_to_exclude: current_buttons_to_exclude,
+        )
 
-      all_candidates << (temporary_results.sum + 1)
+        new_joltages.each do |new_joltage, new_data|
+          next if cached_results[new_joltage]
+
+          cached_results[new_joltage] ||= true
+
+          unless temp_targets[new_joltage] && temp_targets[new_joltage]["count"] < new_data["count"]
+            temp_targets[new_joltage] = new_data
+          end
+        end
+      end
+      all_targets = temp_targets
     end
 
-    all_candidates.min
+    all_targets.select { |key, _value| key.zero? }.values.first["count"]
+  end
+
+  def all_joltages_after_reaching_zero_for_position(position:, starting_joltages_vector:, buttons:, machine:,
+                                                    current_count:, current_buttons_to_exclude:)
+    starting_joltages = [starting_joltages_vector]
+    minimum_joltage = starting_joltages_vector[position]
+
+    minimum_joltage.times do
+      new_visited_joltages = []
+
+      starting_joltages.each do |starting_joltage|
+        buttons.each do |button|
+          new_joltage = machine.reverse_press_joltage_button(button, starting_joltage)
+
+          new_visited_joltages << new_joltage
+        end
+      end
+      starting_joltages = new_visited_joltages.uniq
+    end
+
+    results = {}
+    starting_joltages.each do |joltage|
+      results[joltage] = {
+        "count" => minimum_joltage + current_count,
+        "current_buttons_to_exclude" => current_buttons_to_exclude + buttons,
+      }
+    end
+    results
   end
 end

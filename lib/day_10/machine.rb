@@ -82,9 +82,8 @@ class Machine
     attr_reader :light_indexes, :joltage_vector
 
     def initialize(machine, string)
-      @machine = machine
       @light_indexes = string.to_enum(:scan, /([\d]+)/).map { Regexp.last_match[1].to_i }
-      @joltage_vector = Vector.zero(@machine.length)
+      @joltage_vector = Vector.zero(machine.length)
 
       @light_indexes.each do |index|
         @joltage_vector[index] = 1
