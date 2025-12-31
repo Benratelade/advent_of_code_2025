@@ -5,6 +5,7 @@ class Solver
 
   def initialize(file)
     @file = file
+    @cache = {}
 
     process_devices
   end
@@ -15,10 +16,15 @@ class Solver
   end
 
   def solve_part_2
-    find_all_path_starts_between("fft", "svr")
+    # this builds the cache. We know dac comes last
+    count_paths_after_dac = recurse_count_all_paths_between("dac", "out")
+    # this builds the cache. We know fft comes firt
+    count_paths_after_fft = recurse_count_all_paths_between("fft", "out")
+    binding.irb
+    recurse_count_all_paths_between("svr", "out")[:came_through_both]
   end
 
-  def find_all_path_starts_between(end_address, start_address = "svr")
+  def find_all_path_starts_between(end_address:, start_address: "svr")
     paths = []
 
     incomplete_reverse_paths = { end_address => end_address }
@@ -67,6 +73,38 @@ class Solver
 
     puts paths.uniq
     paths.uniq
+  end
+
+  def recurse_count_all_paths_between(path_start, end_address, visited_fft = false, visited_dac = false)
+    if path_start == end_address || path_start == "out"
+      return {
+        total: 1,
+        came_through_fft: visited_fft ? 1 : 0,
+        came_through_dac: visited_dac ? 1 : 0,
+        came_through_both: visited_fft && visited_dac ? 1 : 0,
+      }
+    end
+
+    # binding.irb if @cache[path_start]
+    return @cache[path_start] if @cache[path_start]
+
+    paths_from_here = @devices[path_start]
+
+    visited_fft ||= path_start == "fft"
+    visited_dac ||= path_start == "dac"
+    paths_summaries = paths_from_here.map do |path_from_here|
+      recurse_count_all_paths_between(path_from_here, end_address, visited_fft, visited_dac)
+    end
+
+    new_summary = {
+      total: paths_summaries.sum { |summary| summary[:total] },
+      came_through_fft: paths_summaries.sum { |summary| summary[:came_through_fft] },
+      came_through_dac: paths_summaries.sum { |summary| summary[:came_through_dac] },
+      came_through_both: paths_summaries.sum { |summary| summary[:came_through_both] },
+    }
+
+    @cache[path_start] ||= new_summary
+    new_summary
   end
 
   def follow_all_paths_between_and_stop_when_found(start_address, end_address)
