@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "../commons/map"
+require "matrix"
 
 Point = Data.define(:x_coord, :y_coord)
 class Solver
@@ -17,6 +18,10 @@ class Solver
   def initialize(file)
     @file = file
     @red_tiles_points = []
+    @points_dictionary = {
+      x_coords: {},
+      y_coords: {},
+    }
     process_file
   end
 
@@ -34,7 +39,6 @@ class Solver
 
     leftmost_points.each do |left_point|
       rightmost_points.each do |right_point|
-        puts "Measuring distance for #{point_to_s(left_point)} - #{point_to_s(right_point)}"
         corner_point = if left_point.y_coord <= right_point.y_coord
                          # find top-right corner
                          Point.new(x_coord: left_point.x_coord, y_coord: right_point.y_coord)
@@ -53,7 +57,9 @@ class Solver
     @areas.max { |pair_1, pair_2| pair_1[1] <=> pair_2[1] }[1]
   end
 
-  def solve_part_2; end
+  def solve_part_2
+    build_map
+  end
 
   private
 
@@ -67,7 +73,10 @@ class Solver
   def process_file
     File.readlines(@file).map do |line|
       x_coord, y_coord = line.strip.split(",").map(&:to_i)
-      @red_tiles_points << Point.new(x_coord: x_coord, y_coord: y_coord)
+      new_point = Point.new(x_coord: x_coord, y_coord: y_coord)
+      @red_tiles_points << new_point
+      @points_dictionary[:x_coords][x_coord] ||= {}
+      @points_dictionary[:x_coords][x_coord][y_coord] = new_point
     end
 
     @red_tiles_points = @red_tiles_points.sort_by(&:x_coord)
@@ -75,5 +84,37 @@ class Solver
 
   def point_to_s(point)
     "#{point.x_coord}, #{point.y_coord}"
+  end
+
+  def build_map
+    sorted_x_coords = @red_tiles_points.map(&:x_coord).sort.uniq
+    sorted_y_coords = @red_tiles_points.map(&:y_coord).sort.uniq
+
+    compressed_points_list = @red_tiles_points.map do |point|
+      Point.new(
+        x_coord: sorted_x_coords.index(point.x_coord),
+        y_coord: sorted_y_coords.index(point.y_coord),
+      )
+    end
+
+    max_compressed_x = compressed_points_list.max_by(&:x_coord).x_coord
+    max_compressed_y = compressed_points_list.max_by(&:y_coord).y_coord
+
+    map_array = []
+    (0..max_compressed_y).each do |row_index|
+      row = []
+      (0..max_compressed_x).each do |column_index|
+        new_point = compressed_points_list.find { |point| point.x_coord == column_index && point.y_coord == row_index }
+        row << (new_point ? "#" : ".")
+      end
+      map_array << row
+    end
+
+    @map = Commons::Map.new(map_array)
+    File.open("#{__dir__}/map.txt", "w") do |file|
+      @map.raw.each do |row|
+        file.puts row.join
+      end
+    end
   end
 end
