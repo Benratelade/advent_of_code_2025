@@ -4,6 +4,7 @@ require_relative "../commons/map"
 require "matrix"
 
 Point = Data.define(:x_coord, :y_coord)
+CompressedPoint = Data.define(:x_coord, :y_coord, :source_point)
 class Solver
   attr_reader :map, :polygon
 
@@ -18,13 +19,18 @@ class Solver
   def initialize(file)
     @file = file
     @red_tiles_points = []
+    @compressed_points = []
     @points_dictionary = {
+      x_coords: {},
+      y_coords: {},
+    }
+    @compressed_points_dictionary = {
       x_coords: {},
       y_coords: {},
     }
     process_file
     build_map
-    build_polygon_from_map
+    build_polygon_from_compressed_points
   end
 
   def solve_part_1
@@ -93,40 +99,47 @@ class Solver
     sorted_x_coords = @red_tiles_points.map(&:x_coord).sort.uniq
     sorted_y_coords = @red_tiles_points.map(&:y_coord).sort.uniq
 
-    compressed_points_list = @red_tiles_points.map do |point|
-      Point.new(
-        x_coord: sorted_x_coords.index(point.x_coord),
-        y_coord: sorted_y_coords.index(point.y_coord),
+    @compressed_points = @red_tiles_points.map do |point|
+      compressed_x_coord = sorted_x_coords.index(point.x_coord)
+      compressed_y_coord = sorted_y_coords.index(point.y_coord)
+
+      new_point = CompressedPoint.new(
+        x_coord: compressed_x_coord,
+        y_coord: compressed_y_coord,
+        source_point: point,
       )
+
+      @compressed_points_dictionary[:x_coords][compressed_x_coord] ||= []
+      @compressed_points_dictionary[:x_coords][compressed_x_coord] << new_point
+
+      @compressed_points_dictionary[:y_coords][compressed_y_coord] ||= []
+      @compressed_points_dictionary[:y_coords][compressed_y_coord] << new_point
+
+      new_point
     end
 
-    max_compressed_x = compressed_points_list.max_by(&:x_coord).x_coord
-    max_compressed_y = compressed_points_list.max_by(&:y_coord).y_coord
+    max_compressed_x = @compressed_points.max_by(&:x_coord).x_coord
+    max_compressed_y = @compressed_points.max_by(&:y_coord).y_coord
 
     map_array = []
     (0..max_compressed_y).each do |row_index|
       row = []
       (0..max_compressed_x).each do |column_index|
-        new_point = compressed_points_list.find { |point| point.x_coord == column_index && point.y_coord == row_index }
+        new_point = @compressed_points.find { |point| point.x_coord == column_index && point.y_coord == row_index }
         row << (new_point ? "#" : ".")
       end
       map_array << row
     end
 
     @map = Commons::Map.new(map_array)
-    File.open("#{__dir__}/map.txt", "w") do |file|
-      @map.raw.each do |row|
-        file.puts row.join
-      end
-    end
   end
 
-  def build_polygon_from_map
+  def build_polygon_from_compressed_points
     @polygon = Polygon.new
 
     # Keep a reference to the very first point, to ensure we closed the loop
     # First point is lowest by :x_coord
-    root_point = @red_tiles_points.first
+    root_point = @compressed_points.first
     start_point = root_point
     previous_side_orientation = :vertical
     loop do
@@ -141,27 +154,27 @@ class Solver
   end
 
   def find_next_point(start_point, previous_side_orientation:)
-    return find_horizontal_neighbour(start_point) if previous_side_orientation == :vertical
+    return find_compressed_horizontal_neighbour(start_point) if previous_side_orientation == :vertical
 
-    find_vertical_neighbour(start_point)
+    find_compressed_vertical_neighbour(start_point)
   end
 
-  def find_horizontal_neighbour(point)
-    side_end = @points_dictionary[:y_coords][point.y_coord].find do |neighbour_point|
+  def find_compressed_horizontal_neighbour(point)
+    side_end = @compressed_points_dictionary[:y_coords][point.y_coord].find do |neighbour_point|
       neighbour_point.x_coord < point.x_coord
     end
-    side_end ||= @points_dictionary[:y_coords][point.y_coord].find do |neighbour_point|
+    side_end ||= @compressed_points_dictionary[:y_coords][point.y_coord].find do |neighbour_point|
       neighbour_point.x_coord > point.x_coord
     end
 
     side_end
   end
 
-  def find_vertical_neighbour(point)
-    side_end = @points_dictionary[:x_coords][point.x_coord].find do |neighbour_point|
+  def find_compressed_vertical_neighbour(point)
+    side_end = @compressed_points_dictionary[:x_coords][point.x_coord].find do |neighbour_point|
       neighbour_point.y_coord < point.y_coord
     end
-    side_end ||= @points_dictionary[:x_coords][point.x_coord].find do |neighbour_point|
+    side_end ||= @compressed_points_dictionary[:x_coords][point.x_coord].find do |neighbour_point|
       neighbour_point.y_coord > point.y_coord
     end
 
