@@ -5,7 +5,7 @@ require "matrix"
 
 Point = Data.define(:x_coord, :y_coord)
 class Solver
-  attr_reader :map
+  attr_reader :map, :polygon
 
   def self.edge_length(first_point, second_point)
     x_delta = first_point.x_coord - second_point.x_coord
@@ -23,6 +23,8 @@ class Solver
       y_coords: {},
     }
     process_file
+    build_map
+    build_polygon_from_map
   end
 
   def solve_part_1
@@ -57,9 +59,7 @@ class Solver
     @areas.max { |pair_1, pair_2| pair_1[1] <=> pair_2[1] }[1]
   end
 
-  def solve_part_2
-    build_map
-  end
+  def solve_part_2; end
 
   private
 
@@ -75,8 +75,11 @@ class Solver
       x_coord, y_coord = line.strip.split(",").map(&:to_i)
       new_point = Point.new(x_coord: x_coord, y_coord: y_coord)
       @red_tiles_points << new_point
-      @points_dictionary[:x_coords][x_coord] ||= {}
-      @points_dictionary[:x_coords][x_coord][y_coord] = new_point
+      @points_dictionary[:x_coords][x_coord] ||= []
+      @points_dictionary[:x_coords][x_coord] << new_point
+
+      @points_dictionary[:y_coords][y_coord] ||= []
+      @points_dictionary[:y_coords][y_coord] << new_point
     end
 
     @red_tiles_points = @red_tiles_points.sort_by(&:x_coord)
@@ -115,6 +118,61 @@ class Solver
       @map.raw.each do |row|
         file.puts row.join
       end
+    end
+  end
+
+  def build_polygon_from_map
+    @polygon = Polygon.new
+
+    # Keep a reference to the very first point, to ensure we closed the loop
+    # First point is lowest by :x_coord
+    root_point = @red_tiles_points.first
+    start_point = root_point
+    previous_side_orientation = :vertical
+    loop do
+      end_point = find_next_point(start_point, previous_side_orientation: previous_side_orientation)
+      previous_side_orientation = previous_side_orientation == :vertical ? :horizontal : :vertical
+      @polygon.sides << [start_point, end_point]
+
+      break if end_point == root_point
+
+      start_point = end_point
+    end
+  end
+
+  def find_next_point(start_point, previous_side_orientation:)
+    return find_horizontal_neighbour(start_point) if previous_side_orientation == :vertical
+
+    find_vertical_neighbour(start_point)
+  end
+
+  def find_horizontal_neighbour(point)
+    side_end = @points_dictionary[:y_coords][point.y_coord].find do |neighbour_point|
+      neighbour_point.x_coord < point.x_coord
+    end
+    side_end ||= @points_dictionary[:y_coords][point.y_coord].find do |neighbour_point|
+      neighbour_point.x_coord > point.x_coord
+    end
+
+    side_end
+  end
+
+  def find_vertical_neighbour(point)
+    side_end = @points_dictionary[:x_coords][point.x_coord].find do |neighbour_point|
+      neighbour_point.y_coord < point.y_coord
+    end
+    side_end ||= @points_dictionary[:x_coords][point.x_coord].find do |neighbour_point|
+      neighbour_point.y_coord > point.y_coord
+    end
+
+    side_end
+  end
+
+  class Polygon
+    attr_reader :sides
+
+    def initialize
+      @sides = []
     end
   end
 end

@@ -35,7 +35,15 @@ RSpec.describe Solver do
     it "returns the expected result for part 2" do
       solver = Solver.new("test-file.txt")
 
-      expect(solver.solve_part_2).to eq(nil)
+      expect(solver.solve_part_2).to eq(24)
+    end
+  end
+
+  describe "initialize" do
+    it "creates a polygon using the points" do
+      solver = Solver.new("test-file.txt")
+
+      expect(solver.polygon.sides.count).to eq(8)
     end
   end
 end
