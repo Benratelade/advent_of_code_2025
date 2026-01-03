@@ -28,6 +28,7 @@ class Solver
       x_coords: {},
       y_coords: {},
     }
+    @point_in_polygon_cache = {}
     process_file
     build_map
     build_polygon_from_compressed_points
@@ -45,8 +46,10 @@ class Solver
       raise "Split the points the wrong way!"
     end
 
+    rectangles_count = 0
     leftmost_points.each do |left_point|
       rightmost_points.each do |right_point|
+        rectangles_count += 1
         corner_point = if left_point.y_coord <= right_point.y_coord
                          # find top-right corner
                          Point.new(x_coord: left_point.x_coord, y_coord: right_point.y_coord)
@@ -62,10 +65,71 @@ class Solver
       end
     end
 
+    puts "total inspected rectangles: #{rectangles_count}"
     @areas.max { |pair_1, pair_2| pair_1[1] <=> pair_2[1] }[1]
   end
 
-  def solve_part_2; end
+  def solve_part_2
+    min_x = @compressed_points.first.x_coord
+    max_x = @compressed_points.last.x_coord
+    middle_x = (min_x + max_x) / 2
+
+    leftmost_points = @compressed_points.filter { |point| point.x_coord <= middle_x }
+    rightmost_points = @compressed_points.filter { |point| point.x_coord > middle_x }
+
+    unless leftmost_points.count + rightmost_points.count == @compressed_points.count
+      raise "Split the points the wrong way!"
+    end
+
+    rectangles_count = 0
+    leftmost_points.each do |left_point|
+      rightmost_points.each do |right_point|
+        puts "inspected #{rectangles_count} so far" if (rectangles_count % 5000).zero?
+        rectangles_count += 1
+        corner_point = if left_point.y_coord <= right_point.y_coord
+                         # find top-right corner
+                         CompressedPoint.new(
+                           x_coord: left_point.x_coord,
+                           y_coord: right_point.y_coord,
+                           source_point: Point.new(left_point.source_point.x_coord, right_point.source_point.y_coord),
+                         )
+                       else
+                         # find bottom-right corner
+                         CompressedPoint.new(
+                           x_coord: right_point.x_coord,
+                           y_coord: left_point.y_coord,
+                           source_point: Point.new(right_point.source_point.x_coord, left_point.source_point.y_coord),
+                         )
+                       end
+
+        # we need to check that all points within this rectangle belong in the polygon
+        min_inner_y_coord = [left_point, right_point].min_by(&:y_coord).y_coord
+        max_inner_y_coord = [left_point, right_point].max_by(&:y_coord).y_coord
+        min_inner_x_coord = [left_point, right_point].min_by(&:x_coord).x_coord
+        max_inner_x_coord = [left_point, right_point].max_by(&:x_coord).x_coord
+        all_points_in_polygon = true
+        (min_inner_y_coord..max_inner_y_coord).each do |y_coord|
+          (min_inner_x_coord..max_inner_x_coord).each do |x_coord|
+            point = Point.new(x_coord: x_coord, y_coord: y_coord)
+            if @point_in_polygon_cache["#{x_coord};#{y_coord}"].nil?
+              @point_in_polygon_cache["#{x_coord};#{y_coord}"] = point_is_in_polygon?(point)
+            end
+            all_points_in_polygon = false unless @point_in_polygon_cache["#{x_coord};#{y_coord}"]
+          end
+        end
+
+        next unless all_points_in_polygon
+
+        area = calculate_area(left_point.source_point, right_point.source_point, corner_point.source_point)
+
+        @part_2_areas ||= {}
+        @part_2_areas[[left_point.source_point, right_point.source_point]] = area
+      end
+    end
+
+    puts "total inspected rectangles: #{rectangles_count}"
+    @part_2_areas.max { |pair_1, pair_2| pair_1[1] <=> pair_2[1] }[1]
+  end
 
   def point_is_in_polygon?(point)
     return true if point_is_on_an_edge?(point)
@@ -116,7 +180,7 @@ class Solver
   end
 
   def point_is_on_an_edge?(point)
-    return true if @polygon.vertical_sides.any? do |vertical_side|
+    crosses_vertical_side = @polygon.vertical_sides.any? do |vertical_side|
       side_crossed = false
       vertical_side.each do |side_point|
         topmost_point = vertical_side.min_by(&:y_coord)
@@ -128,7 +192,7 @@ class Solver
       side_crossed
     end
 
-    @polygon.horizontal_sides.any? do |horizontal_side|
+    crosses_horizontal_side = @polygon.horizontal_sides.any? do |horizontal_side|
       side_crossed = false
       horizontal_side.each do |side_point|
         leftmost_point = horizontal_side.min_by(&:x_coord)
@@ -139,6 +203,8 @@ class Solver
       end
       side_crossed
     end
+
+    crosses_vertical_side || crosses_horizontal_side
   end
 
   private
