@@ -67,6 +67,80 @@ class Solver
 
   def solve_part_2; end
 
+  def point_is_in_polygon?(point)
+    return true if point_is_on_an_edge?(point)
+
+    surrounding_sides = {
+      above: [],
+      below: [],
+      left: [],
+      right: [],
+    }
+    # sides above and below
+    @polygon.horizontal_sides.each do |side|
+      leftmost_point = side.min_by(&:x_coord)
+      rightmost_point = side.max_by(&:x_coord)
+      point_traverses_side = (leftmost_point.x_coord <= point.x_coord) && (rightmost_point.x_coord >= point.x_coord)
+
+      next unless point_traverses_side
+
+      if point.y_coord >= side[0].y_coord
+        surrounding_sides[:above] << side
+      elsif point.y_coord <= side[0].y_coord
+        surrounding_sides[:below] << side
+      end
+    end
+    # sides to the left and to the right
+    @polygon.vertical_sides.each do |side|
+      topmost_point = side.min_by(&:y_coord)
+      bottommost_point = side.max_by(&:y_coord)
+      point_traverses_side = (topmost_point.y_coord <= point.y_coord) && (bottommost_point.y_coord >= point.y_coord)
+
+      next unless point_traverses_side
+
+      if point.x_coord > side[0].x_coord
+        surrounding_sides[:left] << side
+      elsif point.x_coord < side[0].x_coord
+        surrounding_sides[:right] << side
+      end
+    end
+
+    %i[above below left right].all? do |direction|
+      total_count = surrounding_sides[direction].count
+      sides_on_same_axis_count = surrounding_sides[direction].select do |side|
+        axis = %i[above below].include?(direction) ? :x_coord : :y_coord
+        side.any? { |side_point| side_point.send(axis) == point.send(axis) }
+      end.count / 2
+      (total_count - sides_on_same_axis_count).odd?
+    end
+  end
+
+  def point_is_on_an_edge?(point)
+    return true if @polygon.vertical_sides.any? do |vertical_side|
+      side_crossed = false
+      vertical_side.each do |side_point|
+        topmost_point = vertical_side.min_by(&:y_coord)
+        bottommost_point = vertical_side.max_by(&:y_coord)
+        point_traverses_side = (topmost_point.y_coord <= point.y_coord) && (bottommost_point.y_coord >= point.y_coord)
+
+        side_crossed = point.x_coord == side_point.x_coord && point_traverses_side
+      end
+      side_crossed
+    end
+
+    @polygon.horizontal_sides.any? do |horizontal_side|
+      side_crossed = false
+      horizontal_side.each do |side_point|
+        leftmost_point = horizontal_side.min_by(&:x_coord)
+        rightmost_point = horizontal_side.max_by(&:x_coord)
+        point_traverses_side = (leftmost_point.x_coord <= point.x_coord) && (rightmost_point.x_coord >= point.x_coord)
+
+        side_crossed = point.y_coord == side_point.y_coord && point_traverses_side
+      end
+      side_crossed
+    end
+  end
+
   private
 
   def calculate_area(left_point, right_point, corner_point)
@@ -186,6 +260,14 @@ class Solver
 
     def initialize
       @sides = []
+    end
+
+    def horizontal_sides
+      @horizontal_sides ||= @sides.select { |side| side[0].y_coord == side[1].y_coord }
+    end
+
+    def vertical_sides
+      @vertical_sides ||= @sides.select { |side| side[0].x_coord == side[1].x_coord }
     end
   end
 end

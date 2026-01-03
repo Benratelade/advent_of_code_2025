@@ -46,4 +46,26 @@ RSpec.describe Solver do
       expect(solver.polygon.sides.count).to eq(8)
     end
   end
+
+  describe ".point_is_in_polygon?" do
+    # ".#0#"
+    # "##.0"
+    # "#0#0"
+    # "..##"
+    it "returns true for a point INSIDE the polygon" do
+      solver = Solver.new("test-file.txt")
+      point_inside = Point.new(x_coord: 2, y_coord: 1)
+      point_on_side = Point.new(x_coord: 3, y_coord: 1)
+
+      expect(solver.point_is_in_polygon?(point_inside)).to be(true)
+      expect(solver.point_is_in_polygon?(point_on_side)).to be(true)
+    end
+
+    it "returns false for a point OUTSIDE the polygon" do
+      solver = Solver.new("test-file.txt")
+      point = Point.new(x_coord: 0, y_coord: 0)
+
+      expect(solver.point_is_in_polygon?(point)).to be(false)
+    end
+  end
 end
