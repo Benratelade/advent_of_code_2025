@@ -64,8 +64,10 @@ RSpec.describe Solver do
     it "returns false for a point OUTSIDE the polygon" do
       solver = Solver.new("test-file.txt")
       point = Point.new(x_coord: 0, y_coord: 0)
+      another_point = Point.new(x_coord: 1, y_coord: 3)
 
       expect(solver.point_is_in_polygon?(point)).to be(false)
+      expect(solver.point_is_in_polygon?(another_point)).to be(false)
     end
   end
 end

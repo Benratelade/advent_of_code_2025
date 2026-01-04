@@ -139,20 +139,23 @@ class Solver
     sides_crossed = []
     # Ray casting algorithm: check how many edges are crossed to the right of the point
     sides_to_the_right = @polygon.sides.select do |side|
-      side.min_x >= point.x_coord || side.max_x >= point.x_coord
+      point.x_coord <= side.max_x
     end
     sides_to_the_right.each do |side|
       point_traverses_side = (side.min_y..side.max_y).include?(point.y_coord)
 
       next unless point_traverses_side
 
-      # crossing_a_vertex = side.any? { |side_point| side_point.y_coord == point.y_coord }
-      # if crossing_a_vertex
+      # never include a horizontal vertex
+      next if side.min_y == side.max_y && side.min_y == point.y_coord
+      # only include vertical vertex if min_y is less than point.y_coord
+      if side.min_x == side.max_x && (side.min_y == point.y_coord || side.max_y == point.y_coord) && side.min_y > point.y_coord
+        next
+      end
 
-      # else
-        sides_crossed << side
-      # end
+      sides_crossed << side
     end
+    return false if sides_crossed.empty?
 
     sides_crossed.count.odd?
   end
@@ -250,8 +253,8 @@ class Solver
       previous_side_orientation = previous_side_orientation == :vertical ? :horizontal : :vertical
       new_edge = Edge.new(start_point: start_point, end_point: end_point)
       unless previous_edge.nil?
-        previous_edge.add_adjacent_edge(new_edge)
-        new_edge.add_adjacent_edge(previous_edge)
+        # previous_edge.add_adjacent_edge(new_edge)
+        # new_edge.add_adjacent_edge(previous_edge)
       end
 
       @polygon.sides << new_edge
