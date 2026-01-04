@@ -74,69 +74,6 @@ class Solver
     count
   end
 
-  def press_all_joltage_buttons_for_machine(machine)
-    count = 0
-    results = [machine.starting_joltage]
-    cached_results = { machine.starting_joltage => 0 }
-    loop do
-      count += 1
-      new_results = []
-
-      results.each do |result|
-        machine.buttons.each do |button|
-          temp_result = machine.press_joltage_button(button, result)
-          result_overshot_target = false
-          temp_result.each_with_index do |light, index|
-            result_overshot_target = light > machine.target_joltage[index]
-          end
-
-          next if result_overshot_target || cached_results[temp_result]
-
-          cached_results[temp_result] ||= count
-          new_results << temp_result
-        end
-      end
-
-      break if new_results.any? { |new_result| new_result == machine.target_joltage }
-
-      results = new_results.uniq
-    end
-
-    count
-  end
-
-  def process_joltages_for_machine_counting_down(machine)
-    count = 0
-    target_joltages = [machine.target_joltage]
-    cached_results = { machine.target_joltage => 0 }
-    loop do
-      puts "Current count: #{count}"
-      count += 1
-      new_visited_joltages = []
-
-      target_joltages.each do |target_joltage|
-        machine.buttons.each do |button|
-          temp_result = machine.reverse_press_joltage_button(button, target_joltage)
-          result_overshot_start = false
-          temp_result.each do |jolt|
-            result_overshot_start = jolt.negative?
-          end
-
-          next if cached_results[temp_result] || result_overshot_start
-
-          cached_results[temp_result] ||= count
-          new_visited_joltages << temp_result
-        end
-      end
-
-      break if new_visited_joltages.any? { |new_result| new_result == machine.starting_joltage }
-
-      target_joltages = new_visited_joltages.uniq
-    end
-
-    count
-  end
-
   def process_joltages_for_machine(machine)
     puts "Machine target: #{machine.target_joltage}"
     all_targets = {
@@ -187,8 +124,14 @@ class Solver
     all_targets.select { |key, _value| key.zero? }.values.first["count"]
   end
 
-  def all_joltages_after_reaching_zero_for_position(position:, starting_joltages_vector:, buttons:, machine:,
-                                                    current_count:, current_buttons_to_exclude:)
+  def all_joltages_after_reaching_zero_for_position(
+    position:,
+    starting_joltages_vector:,
+    buttons:,
+    machine:,
+    current_count:,
+    current_buttons_to_exclude:
+  )
     starting_joltages = [starting_joltages_vector]
     minimum_joltage = starting_joltages_vector[position]
 
