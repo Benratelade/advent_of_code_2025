@@ -149,12 +149,13 @@ class Solver
       # never include a horizontal vertex
       next if side.min_y == side.max_y && side.min_y == point.y_coord
       # only include vertical vertex if min_y is less than point.y_coord
-      if side.min_x == side.max_x && (side.min_y == point.y_coord || side.max_y == point.y_coord) && side.min_y > point.y_coord
+      if side.min_x == side.max_x && (side.min_y == point.y_coord || side.max_y == point.y_coord) && side.min_y >= point.y_coord
         next
       end
 
       sides_crossed << side
     end
+    # binding.irb if point.x_coord == 7 && point.y_coord == 124
     return false if sides_crossed.empty?
 
     sides_crossed.count.odd?
