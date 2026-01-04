@@ -117,7 +117,7 @@ class Solver
             all_points_in_polygon = false unless @point_in_polygon_cache["#{x_coord};#{y_coord}"]
           end
         end
-
+        # binding.irb if right_point.x_coord == 217 && right_point.y_coord == 123 && left_point.y_coord == 133
         next unless all_points_in_polygon
 
         area = calculate_area(left_point.source_point, right_point.source_point, corner_point.source_point)
@@ -132,76 +132,38 @@ class Solver
   end
 
   def point_is_in_polygon?(point)
+    # binding.irb if point.x_coord == 7 && point.y_coord == 124
+    # binding.irb if point.x_coord == 8 && point.y_coord == 124
     return true if point_is_on_an_edge?(point)
 
-    surrounding_sides = {
-      above: [],
-      below: [],
-      left: [],
-      right: [],
-    }
-    # sides above and below
-    @polygon.horizontal_sides.each do |side|
-      leftmost_point = side.min_by(&:x_coord)
-      rightmost_point = side.max_by(&:x_coord)
-      point_traverses_side = (leftmost_point.x_coord <= point.x_coord) && (rightmost_point.x_coord >= point.x_coord)
+    sides_crossed = []
+    # Ray casting algorithm: check how many edges are crossed to the right of the point
+    sides_to_the_right = @polygon.sides.select do |side|
+      side.min_x >= point.x_coord || side.max_x >= point.x_coord
+    end
+    sides_to_the_right.each do |side|
+      point_traverses_side = (side.min_y..side.max_y).include?(point.y_coord)
 
       next unless point_traverses_side
 
-      if point.y_coord >= side[0].y_coord
-        surrounding_sides[:above] << side
-      elsif point.y_coord <= side[0].y_coord
-        surrounding_sides[:below] << side
-      end
-    end
-    # sides to the left and to the right
-    @polygon.vertical_sides.each do |side|
-      topmost_point = side.min_by(&:y_coord)
-      bottommost_point = side.max_by(&:y_coord)
-      point_traverses_side = (topmost_point.y_coord <= point.y_coord) && (bottommost_point.y_coord >= point.y_coord)
+      # crossing_a_vertex = side.any? { |side_point| side_point.y_coord == point.y_coord }
+      # if crossing_a_vertex
 
-      next unless point_traverses_side
-
-      if point.x_coord > side[0].x_coord
-        surrounding_sides[:left] << side
-      elsif point.x_coord < side[0].x_coord
-        surrounding_sides[:right] << side
-      end
+      # else
+        sides_crossed << side
+      # end
     end
 
-    %i[above below left right].all? do |direction|
-      total_count = surrounding_sides[direction].count
-      sides_on_same_axis_count = surrounding_sides[direction].select do |side|
-        axis = %i[above below].include?(direction) ? :x_coord : :y_coord
-        side.any? { |side_point| side_point.send(axis) == point.send(axis) }
-      end.count / 2
-      (total_count - sides_on_same_axis_count).odd?
-    end
+    sides_crossed.count.odd?
   end
 
   def point_is_on_an_edge?(point)
     crosses_vertical_side = @polygon.vertical_sides.any? do |vertical_side|
-      side_crossed = false
-      vertical_side.each do |side_point|
-        topmost_point = vertical_side.min_by(&:y_coord)
-        bottommost_point = vertical_side.max_by(&:y_coord)
-        point_traverses_side = (topmost_point.y_coord <= point.y_coord) && (bottommost_point.y_coord >= point.y_coord)
-
-        side_crossed = point.x_coord == side_point.x_coord && point_traverses_side
-      end
-      side_crossed
+      (vertical_side.min_y..vertical_side.max_y).include?(point.y_coord) && point.x_coord == vertical_side.min_x
     end
 
     crosses_horizontal_side = @polygon.horizontal_sides.any? do |horizontal_side|
-      side_crossed = false
-      horizontal_side.each do |side_point|
-        leftmost_point = horizontal_side.min_by(&:x_coord)
-        rightmost_point = horizontal_side.max_by(&:x_coord)
-        point_traverses_side = (leftmost_point.x_coord <= point.x_coord) && (rightmost_point.x_coord >= point.x_coord)
-
-        side_crossed = point.y_coord == side_point.y_coord && point_traverses_side
-      end
-      side_crossed
+      (horizontal_side.min_x..horizontal_side.max_x).include?(point.x_coord) && point.y_coord == horizontal_side.min_y
     end
 
     crosses_vertical_side || crosses_horizontal_side
@@ -282,10 +244,18 @@ class Solver
     root_point = @compressed_points.first
     start_point = root_point
     previous_side_orientation = :vertical
+    previous_edge = nil
     loop do
       end_point = find_next_point(start_point, previous_side_orientation: previous_side_orientation)
       previous_side_orientation = previous_side_orientation == :vertical ? :horizontal : :vertical
-      @polygon.sides << [start_point, end_point]
+      new_edge = Edge.new(start_point: start_point, end_point: end_point)
+      unless previous_edge.nil?
+        previous_edge.add_adjacent_edge(new_edge)
+        new_edge.add_adjacent_edge(previous_edge)
+      end
+
+      @polygon.sides << new_edge
+      previous_edge = new_edge
 
       break if end_point == root_point
 
@@ -329,11 +299,34 @@ class Solver
     end
 
     def horizontal_sides
-      @horizontal_sides ||= @sides.select { |side| side[0].y_coord == side[1].y_coord }
+      @horizontal_sides ||= @sides.select { |side| side.min_y == side.max_y }
     end
 
     def vertical_sides
-      @vertical_sides ||= @sides.select { |side| side[0].x_coord == side[1].x_coord }
+      @vertical_sides ||= @sides.select { |side| side.min_x == side.max_x }
+    end
+  end
+
+  class Edge
+    attr_reader :start_point, :end_point, :min_x, :max_x, :min_y, :max_y, :adjacent_edges
+
+    def initialize(start_point:, end_point:)
+      @start_point = start_point
+      @end_point = end_point
+      @min_x = [@start_point, @end_point].min_by(&:x_coord).x_coord
+      @max_x = [@start_point, @end_point].max_by(&:x_coord).x_coord
+      @min_y = [@start_point, @end_point].min_by(&:y_coord).y_coord
+      @max_y = [@start_point, @end_point].max_by(&:y_coord).y_coord
+
+      @adjacent_edges = []
+    end
+
+    def points
+      [start_point, end_point]
+    end
+
+    def add_adjacent_edge(edge)
+      @adjacent_edges << edge
     end
   end
 end
