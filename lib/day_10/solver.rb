@@ -76,52 +76,61 @@ class Solver
 
   def process_joltages_for_machine(machine)
     puts "Machine target: #{machine.target_joltage}"
-    all_targets = {
-      machine.target_joltage => {
-        "count" => 0,
-        "current_buttons_to_exclude" => [],
-      },
-    }
-    cached_results = { machine.target_joltage => 0 }
+    # reduce joltage to all even numbers
+    reduced_machine_summary = reduce_machine_to_even_numbers(machine)
 
+    halved_brute_force_result = brute_force_half_of(reduced_machine_summary[:starting_joltage], machine)
+    reduced_machine_summary[:count] + halved_brute_force_result
+  end
+
+  def reduce_machine_to_even_numbers(machine)
+    starting_joltages = [machine.target_joltage]
+    count = 0
+    even_joltage = nil
     loop do
-      break if all_targets.keys.any?(&:zero?)
+      even_joltage = starting_joltages.find { |joltage| joltage.all?(&:even?) }
+      break unless even_joltage.nil?
 
-      temp_targets = {}
-      all_targets.each do |target, data|
-        count_candidate = data["count"]
-        current_buttons_to_exclude = data["current_buttons_to_exclude"]
-        minimum_joltage = target.min(target.size).find { |element| !element.zero? }
-        puts "Processing minimum: #{minimum_joltage} for target: #{target}"
-
-        joltage_index = target.to_a.index(minimum_joltage)
-        buttons = machine.buttons.select do |button|
-          button.joltage_vector[joltage_index] == 1 && !current_buttons_to_exclude.include?(button)
+      new_starting_joltages = []
+      starting_joltages.each do |starting_joltage|
+        machine.buttons.each do |button|
+          new_starting_joltages << (starting_joltage - button.joltage_vector)
         end
-
-        new_joltages = all_joltages_after_reaching_zero_for_position(
-          position: joltage_index,
-          starting_joltages_vector: target,
-          buttons: buttons,
-          machine: machine,
-          current_count: count_candidate,
-          current_buttons_to_exclude: current_buttons_to_exclude,
-        )
-
-        new_joltages.each do |new_joltage, new_data|
-          next if cached_results[new_joltage]
-
-          cached_results[new_joltage] ||= true
-
-          unless temp_targets[new_joltage] && temp_targets[new_joltage]["count"] < new_data["count"]
-            temp_targets[new_joltage] = new_data
-          end
-        end
+        count += 1
       end
-      all_targets = temp_targets
+      starting_joltages = new_starting_joltages
     end
 
-    all_targets.select { |key, _value| key.zero? }.values.first["count"]
+    { starting_joltage: even_joltage, count: count }
+  end
+
+  def brute_force_half_of(joltage, machine)
+    multiplier = 0
+    halved_joltage = joltage
+
+    loop do
+      halved_joltage = joltage / 2
+      multiplier += 2
+
+      break unless halved_joltage.all?(&:even?)
+    end
+
+    counter = 0
+    joltages_after_pressing_buttons = [halved_joltage]
+    loop do
+      break if joltages_after_pressing_buttons.any?(&:zero?)
+
+      new_joltages = []
+      joltages_after_pressing_buttons.each do |joltage_after_pressing_button|
+        machine.buttons.each do |button|
+          new_joltages << (joltage_after_pressing_button - button.joltage_vector)
+        end
+      end
+      counter += 1
+      joltages_after_pressing_buttons = new_joltages
+    end
+
+    counter * multiplier
   end
 
   def all_joltages_after_reaching_zero_for_position(
